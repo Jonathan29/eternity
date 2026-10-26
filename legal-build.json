@@ -1,0 +1,32 @@
+{
+  "documents": [
+    {
+      "source": "politica-de-privacidad.md",
+      "output": "privacidad.html",
+      "legalVersion": "beta-2026-10-25",
+      "policyVersion": "ve-beta-2026-10-25",
+      "effectiveDate": "25 de octubre de 2026",
+      "sourceSha256": "19ad6c4fd8c943dea60f5358e990769f28e75f9de1d8f0812636fd0d4aab703b"
+    },
+    {
+      "source": "terminos-y-condiciones.md",
+      "output": "terminos.html",
+      "legalVersion": "beta-2026-10-25",
+      "policyVersion": "ve-beta-2026-10-25",
+      "effectiveDate": "25 de octubre de 2026",
+      "sourceSha256": "c0eb8327e5ecd7bbdc0736e2d0551b2f8050d74495d9018dc2050157f80b9266"
+    },
+    {
+      "source": "normas-de-la-comunidad.md",
+      "output": "normas.html",
+      "legalVersion": "beta-2026-10-25",
+      "policyVersion": "ve-beta-2026-10-25",
+      "effectiveDate": "25 de octubre de 2026",
+      "sourceSha256": "5a79270e671748ddb5c0f232ffc2ae111020e4755dc96c06838897c28b7c3356"
+    }
+  ],
+  "substitutions": {
+    "publicDocuments": "https://jonathan29.github.io/eternity/",
+    "accountDeletion": "https://jonathan29.github.io/eternity/eliminar-cuenta.html"
+  }
+}
