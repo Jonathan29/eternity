@@ -1,0 +1,4 @@
+# The initial site's config.js contains its intentionally public Supabase publishable
+# credential (documented in README.md). This exact historical match is not a secret.
+36257be69a8fbe790594257fff844a09edc89938:config.js:generic-api-key:4
+# Add only exact fingerprints of reviewed non-secrets, with a reason.

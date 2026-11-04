@@ -1,0 +1,38 @@
+title = "Eternity security hardening"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-secret"
+description = "Supabase secret credential"
+regex = '''sb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "supabase-service-jwt"
+description = "Assigned Supabase service-role JWT"
+regex = '''(?i)(?:service_role(?:_key)?|supabase_secret_keys)\s*["']?\s*[:=]\s*["']?(eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)'''
+secretGroup = 1
+keywords = ["service_role", "supabase_secret_keys"]
+
+[[rules]]
+id = "api-bible-assignment"
+description = "Assigned API.Bible credential"
+regex = '''(?i)(?:api_bible_key|api[-_]?bible[-_]?key)\s*["']?\s*[:=]\s*["']?([A-Za-z0-9_-]{20,})'''
+secretGroup = 1
+keywords = ["api_bible", "api-bible", "apibible"]
+
+[[rules]]
+id = "posthog-assignment"
+description = "Assigned PostHog credential"
+regex = '''(?i)posthog[_-]?(?:api[_-]?)?(?:key|token)\s*["']?\s*[:=]\s*["']?([A-Za-z0-9_-]{20,})'''
+secretGroup = 1
+keywords = ["posthog"]
+
+[[rules]]
+id = "fcm-apns-assignment"
+description = "Assigned FCM or APNs credential"
+regex = '''(?i)(?:fcm|apns)[_-](?:server[_-])?(?:key|secret|token)\s*["']?\s*[:=]\s*["']?([A-Za-z0-9_:/+.=-]{20,})'''
+secretGroup = 1
+keywords = ["fcm", "apns"]
