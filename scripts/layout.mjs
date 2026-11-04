@@ -1,3 +1,5 @@
+import { securityMeta } from './security-policy.mjs';
+
 export const siteUrl = 'https://jonathan29.github.io/eternity/';
 export const escapeHtml = text => String(text).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 const links = [['privacidad.html', 'Privacidad'], ['terminos.html', 'Términos'], ['normas.html', 'Comunidad'], ['eliminar-cuenta.html', 'Eliminar cuenta']];
@@ -6,6 +8,7 @@ export function page({ title, description, file, content, scripts = '' }) {
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  ${securityMeta}
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="${escapeHtml(description)}">

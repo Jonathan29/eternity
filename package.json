@@ -8,6 +8,8 @@
     "build:static": "node scripts/build-static.mjs",
     "serve": "node scripts/serve.mjs",
     "test": "node --test tests/*.test.mjs",
+    "test:browser-security": "node tests/browser-security.mjs",
+    "security:secrets": "node scripts/scan-secrets.mjs",
     "check:site": "node scripts/check-site.mjs"
   },
   "devDependencies": {

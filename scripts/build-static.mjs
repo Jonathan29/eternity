@@ -1,5 +1,7 @@
-import { writeFile } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { page } from './layout.mjs';
+import { securityMeta } from './security-policy.mjs';
 
 const root = new URL('../', import.meta.url);
 const garden = `<div class="garden" aria-hidden="true"><svg viewBox="0 0 320 320" fill="none"><ellipse cx="160" cy="269" rx="85" ry="16" fill="var(--bg)"/><path d="M160 269V135M160 204l-49-38M161 176l49-40" stroke="var(--link)" stroke-width="9" stroke-linecap="round"/><path d="M157 173C97 185 70 144 79 107c45-2 87 16 78 66Z" fill="var(--primary)"/><path d="M164 147c-9-51 25-79 70-77 5 43-21 82-70 77Z" fill="var(--link)"/><path d="M156 117c-42-4-58-37-40-68 37 9 56 34 40 68Z" fill="var(--primary)" opacity=".7"/><circle cx="258" cy="182" r="7" fill="var(--lilac)"/><circle cx="56" cy="209" r="5" fill="var(--honey)"/><path d="M239 235h13m-6-6v12" stroke="var(--lilac)" stroke-width="3" stroke-linecap="round"/></svg><span class="garden-label">Cada paso puede echar raíces.</span></div>`;
@@ -18,7 +20,7 @@ await writeFile(new URL('eliminar-cuenta.html', root), page({
   content:`<div class="page-heading"><p class="eyebrow">Tu cuenta · Tu decisión</p><h1>Si quieres irte,<br>te lo ponemos fácil.</h1><p class="lead">Puedes solicitar la eliminación de tu cuenta y tus datos de Eternity aquí, sin tener la app instalada. Es gratis y no necesitas pedir una copia de tus datos primero.</p><p class="meta">Política ve-beta-2026-10-25 · Vigente desde el 25 de octubre de 2026</p></div>
   <div class="deletion-grid"><div><section aria-labelledby="app-title"><h2 id="app-title">Desde la app</h2><ol><li>En <strong>Inicio</strong>, toca el botón de tu perfil en la cabecera.</li><li>En <strong>Perfil</strong>, abre <strong>Privacidad y autorizaciones</strong>. También está en <strong>Configuración → Privacidad y autorizaciones</strong>.</li><li>Toca <strong>Solicitar eliminación de cuenta</strong> y después <strong>Confirmar solicitud de eliminación</strong>.</li><li>Confirma tu sesión si se solicita. Espera el recibo del servidor; <strong>Actualizar estado</strong> permite consultar los pasos pendientes mientras tu sesión siga disponible.</li></ol><p>Necesitas conexión para enviar la solicitud. Si aparece «no enviada», el servidor todavía no la ha confirmado.</p></section>
   <section class="section-space" aria-labelledby="guest-title"><h2 id="guest-title">¿Empezaste sin correo?</h2><p>La cuenta de invitado está vinculada a la sesión de ese dispositivo. El progreso puede estar en los servidores de Eternity; no existe un correo o contraseña con los que recuperarla aquí.</p><p>Solicita la baja desde la app en el <strong>mismo dispositivo y con esa sesión abierta</strong>, siguiendo los pasos de arriba. No necesitas vincular un correo para borrar.</p><div class="note warm"><p><strong>Desinstalar la app no elimina los datos del servidor.</strong> El ciclo de retención previsto tramita la baja de cuentas sin correo después de <strong>30 días de inactividad</strong>; ese plazo no se aplica a cuentas activas y no equivale a un borrado instantáneo.</p></div><p class="fine">Si perdiste esa sesión, hace falta una revisión segura de titularidad. No crees otra cuenta para borrar la anterior ni envíes contraseñas, fecha de nacimiento o documentos a una dirección pública. El contacto de la política aún es provisional; no hay un canal alternativo de revisión habilitado en esta web.</p></section></div>
-  <section class="flow" id="flow" aria-labelledby="web-title" aria-busy="false"><p class="flow-step">Solicitud web · Sin instalar la app</p><h2 id="web-title">Eliminar desde aquí</h2><p>Entra con el <strong>mismo correo y contraseña</strong> que usas en Eternity. Después podrás revisar y confirmar la baja.</p><form id="login-form"><div class="field"><label for="email">Correo de tu cuenta</label><input id="email" name="email" type="email" autocomplete="username" inputmode="email" required maxlength="254" spellcheck="false" autocapitalize="none"></div><div class="field"><label for="password">Contraseña de tu cuenta</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"></div><button id="sign-in" class="primary" type="submit" disabled>Entrar para continuar</button></form>
+  <section class="flow" id="flow" aria-labelledby="web-title" aria-busy="false"><p class="flow-step">Solicitud web · Sin instalar la app</p><h2 id="web-title">Eliminar desde aquí</h2><p>Entra con el <strong>mismo correo y contraseña</strong> que usas en Eternity. Después podrás revisar y confirmar la baja.</p><form id="login-form" hidden><div class="field"><label for="email">Correo de tu cuenta</label><input id="email" name="email" type="email" autocomplete="username" inputmode="email" required maxlength="254" spellcheck="false" autocapitalize="none"></div><div class="field"><label for="password">Contraseña de tu cuenta</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"></div><button id="sign-in" class="primary" type="submit" disabled>Entrar para continuar</button></form>
   <form id="confirmation-form" hidden><h3 id="confirmation-heading" tabindex="-1">Confirma tu decisión</h3><p>Cuenta: <span class="account" id="account-email"></span></p><p>Al aceptar la solicitud se detendrán las nuevas actividades y comenzará el borrado. <strong>No hay un período de gracia ni un botón para cancelar una baja aceptada.</strong></p><label class="checkbox" for="confirm-deletion"><input type="checkbox" id="confirm-deletion" required><span>Quiero solicitar la eliminación de esta cuenta y sus datos. He leído qué se elimina y qué se conserva durante un plazo limitado.</span></label><button id="request-deletion" class="primary" type="submit">Confirmar solicitud de eliminación</button><button id="cancel-session" class="secondary" type="button">Volver y cerrar esta sesión</button></form>
   <div id="flow-status" class="status note" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden></div><noscript><p class="noscript">Activa JavaScript para usar el acceso seguro en esta página. Los pasos y plazos siguen disponibles aquí; también puedes solicitar la baja desde la app.</p></noscript>
   <p class="fine section-space">Tu contraseña se envía directamente al servicio de acceso de Supabase. No la guardamos en este sitio. Al terminar cerramos esta sesión; al recargar tendrás que entrar de nuevo.</p><p class="fine"><strong>¿Usas Google?</strong> El acceso con Google aún no está habilitado en esta web. Usa correo y contraseña solo si ya están asociados a esa misma cuenta; en otro caso, solicita la baja desde la app con tu sesión de Google. No crees una cuenta nueva: no eliminaría la anterior.</p><p class="fine">Si no recuerdas tu contraseña, utiliza la recuperación de acceso de Eternity antes de continuar. Esta página no crea cuentas ni cambia contraseñas.</p></section></div>
@@ -39,3 +41,34 @@ await writeFile(new URL('404.html', root), page({
   content:`<div class="page-heading"><p class="eyebrow">404 · Un camino por encontrar</p><h1>Esta página<br>no está aquí.</h1><p class="lead">Puede que el enlace haya cambiado. Puedes volver al inicio o ir directamente a la gestión de tu cuenta.</p><div class="actions"><a class="button" href="/eternity/">Volver al inicio</a><a class="button secondary" href="/eternity/eliminar-cuenta.html">Eliminar mi cuenta</a></div></div>`
 }));
 console.log('Generados inicio, eliminación y 404.');
+
+// Refresh only the security metadata of committed legal pages. Their body stays intact.
+for (const file of ['privacidad.html', 'terminos.html', 'normas.html']) {
+  const destination = new URL(file, root);
+  const html = (await readFile(destination, 'utf8'))
+    .replace(/\s*<meta http-equiv="Content-Security-Policy" content="[^"]*">/g, '')
+    .replace('<meta charset="utf-8">', `<meta charset="utf-8">\n  ${securityMeta}`);
+  await writeFile(destination, html);
+}
+
+// Explicit file allowlist: never copy directories or root-level globs into the artifact.
+const servedFiles = [
+  'index.html', 'privacidad.html', 'terminos.html', 'normas.html', 'eliminar-cuenta.html', '404.html',
+  'styles.css', 'theme.js', 'config.js', 'deletion.js', 'deletion-client.js',
+  'robots.txt', '.nojekyll', 'assets/seed.svg',
+];
+const dist = new URL('dist/', root);
+// Refuse a redirected output directory before removing stale artifacts.
+const existing = await lstat(dist).catch(error => { if (error.code !== 'ENOENT') throw error; });
+if (existing && (existing.isSymbolicLink() || !existing.isDirectory())) throw new Error('dist must be a real directory');
+if (existing && await realpath(dist) !== path.join(await realpath(root), 'dist')) {
+  throw new Error('dist resolves outside the site root');
+}
+await rm(dist, { recursive: true, force: true });
+await mkdir(new URL('assets/', dist), { recursive: true });
+for (const file of servedFiles) {
+  if (!(await lstat(new URL(file, root))).isFile()) throw new Error(`Publication input must be a regular file: ${file}`);
+  if (await realpath(new URL(file, root)) !== path.join(await realpath(root), file)) throw new Error(`Publication input resolves outside its expected path: ${file}`);
+  await copyFile(new URL(file, root), new URL(file, dist));
+}
+console.log(`Built dist/ with ${servedFiles.length} served files. No deployment performed.`);
