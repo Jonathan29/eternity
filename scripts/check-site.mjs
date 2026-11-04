@@ -2,6 +2,12 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
+import { fileURLToPath } from 'node:url';
+import { checkHtmlSinks } from './check-html-sinks.mjs';
+
+await checkHtmlSinks(fileURLToPath(new URL('../', import.meta.url)));
+console.log('PASS: no HTML sinks or eval in site source.');
+if (process.argv.includes('--static')) process.exit(0);
 
 const files = ['index.html','privacidad.html','terminos.html','normas.html','eliminar-cuenta.html','404.html'];
 const browser = await chromium.launch({headless:true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? {executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH} : {})});

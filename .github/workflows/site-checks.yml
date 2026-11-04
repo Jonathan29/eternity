@@ -1,0 +1,49 @@
+name: Site checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  site-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - name: Prepare served files only
+        run: npm run build:static
+      - name: Install browser for site verification
+        run: npx playwright install --with-deps chromium
+      - name: Verify the served artifact and security behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run serve > /tmp/eternity-site-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          ready=false
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:4173/eternity/ > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true
+          npm run check:site
+          npm run test:browser-security
+      - name: Upload reviewable Pages artifact without deploying
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
