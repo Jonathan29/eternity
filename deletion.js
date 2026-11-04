@@ -1,7 +1,13 @@
 import { config } from './config.js';
 import { createDeletionClient } from './deletion-client.js';
 
+// Fail closed before initializing Auth or attaching handlers in any embedded context.
+if (window.top !== window.self) document.querySelector('#flow').hidden = true;
+else initializeDeletion();
+
+function initializeDeletion() {
 const login = document.querySelector('#login-form');
+login.hidden = false;
 const confirmation = document.querySelector('#confirmation-form');
 const status = document.querySelector('#flow-status');
 const cancel = document.querySelector('#cancel-session');
@@ -103,3 +109,4 @@ cancel.addEventListener('click', async () => {
   finally { setBusy(false); }
 });
 window.addEventListener('pagehide', () => { if (client) void client.signOut(); });
+}
