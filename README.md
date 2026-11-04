@@ -2,6 +2,8 @@
 
 HTML, CSS y JavaScript sin compilación para servir. GitHub Pages publica la rama `gh-pages`, carpeta raíz. La rama `main` conserva las páginas generadas, los generadores y las pruebas.
 
+Desde el endurecimiento del 2026-11-03, **la única entrada de publicación es `dist/`**. `npm run build:static` reconstruye esa carpeta con una lista explícita de 14 archivos servidos y elimina residuos de compilaciones anteriores. No copia documentos, manifiestos, herramientas, pruebas, configuraciones locales ni directorios completos. El workflow `site-checks.yml` verifica y prepara un artefacto de Pages desde `dist/`; no despliega ni escribe ramas. Al publicar manualmente, el dueño debe reemplazar todo el contenido servido de `gh-pages` por el contenido de `dist/`, incluidos los archivos ocultos permitidos. No publicar la raíz del repositorio ni superponer el artefacto sobre archivos antiguos. La publicación queda pendiente de 14.5.
+
 ## Páginas
 
 | Página | URL prevista |
@@ -56,6 +58,8 @@ No fue necesario cambiar el servidor: el handler existente de `privacy` ya permi
 ```powershell
 cd C:/Source/eternity/site
 npm test
+npm run lint
+npm run build:static
 npm run serve
 ```
 
@@ -65,9 +69,31 @@ En otra terminal, para comprobaciones visuales y automáticas:
 cd C:/Source/eternity/site
 npx playwright install chromium
 npm run check:site
+npm run test:browser-security
 ```
 
 También puede usarse `PLAYWRIGHT_EXECUTABLE_PATH` para un Chromium ya instalado. Las capturas se guardan en `test-results/` (ignorado). La comprobación de sitio bloquea cualquier acceso a un backend `*.supabase.co`. La evaluación axe automática no sustituye una auditoría manual con lector de pantalla.
+
+`serve` usa los archivos de `dist/`. Si existe `config.local.js`, únicamente el servidor de desarrollo sustituye la conexión permitida por `127.0.0.1:55321` y `localhost:55321`; nunca modifica la CSP de `dist/`. `test:browser-security` carga el SDK real con SRI y responde a Auth y `privacy` desde fixtures del proceso de prueba; no conecta con Supabase. Comprueba confirmación, desafío, recibo, cierre de sesión, contraseña borrada, CSP, el override local y marcos del mismo y de distinto origen. No acredita una baja real en la base de datos. `lint` ejecuta la barrera estática de sumideros HTML y `eval`; falla con archivo y línea sin mostrar el código encontrado.
+
+## Seguridad del sitio
+
+Las seis páginas declaran CSP antes de cargar recursos. Permite scripts propios y únicamente la URL fijada del SDK de jsDelivr, estilos propios y Google Fonts, fuentes de Google, imágenes propias y conexiones al propio origen y al host exacto del proyecto Supabase. Prohíbe scripts inline, evaluación dinámica, objetos, marcos hijos y envíos nativos de formularios; la baja sigue usando `fetch` a Supabase. Se conserva la integridad SHA-384. La baja solo instala sus handlers y habilita el formulario en una ventana superior; en marcos se oculta el flujo y sin JavaScript los formularios permanecen ocultos.
+
+GitHub Pages no permite configurar las cabeceras propias que requiere `frame-ancestors`; esa directiva no funciona en una CSP mediante `meta` ([referencia MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/frame-ancestors)). La comprobación de `window.top` es una mitigación de la página de baja; no equivale a rechazar el enmarcado por cabecera. CSP por cabecera, `frame-ancestors`, HSTS y la decisión de hosting siguen en 14.5. Si cambia el dominio o el proyecto, revisar `scripts/security-policy.mjs` y la lista CORS del backend; no ampliar a comodines ni añadir hosts locales a la política publicada.
+
+El escaneo usa [gitleaks 8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1), con reglas predeterminadas más las familias exigidas por la spec. Instalar el binario oficial para la plataforma y comprobar el SHA-256 con `gitleaks_8.30.1_checksums.txt` de esa versión antes de usarlo. El workflow muestra la instalación fijada y la validación para Linux. Para validar workflows se usó [actionlint 1.7.11](https://github.com/rhysd/actionlint/releases/tag/v1.7.11), también comprobado con sus checksums oficiales.
+
+```powershell
+gitleaks version
+actionlint -version
+git fetch origin --prune
+npm run security:secrets
+node scripts/test-secret-scanner.mjs
+actionlint
+```
+
+El escaneo exige un checkout completo y recorre todo el historial alcanzable de todas las referencias locales (`--all --full-history --redact=100`). El workflow descarga todas las ramas, ejecuta ese mismo escaneo en push, PR y semanalmente, y prueba credenciales sintéticas sin llamar a proveedores. La salida registra solo archivo, línea, commit y regla; los informes quedan ignorados en `.local/`. `.gitleaksignore` excluye exclusivamente la huella histórica de la credencial publicable documentada del sitio. No hay excepciones por directorio ni por nombre de archivo. Los resultados y límites de esta entrega están en `.kiro/specs/security-hardening/site-report.md`.
 
 Para probar la baja completa, usar **solo Supabase local** del worktree APP (API 55321 y DB 55322). Si falta `supabase/functions/.env`, ejecutar antes `npm ci` en APP; no imprimir ni versionar ese archivo. Arrancar la pila local si no está en marcha con `npx supabase start` desde APP, dentro del mismo lock. No usar `db push`, `--linked` ni credenciales productivas.
 

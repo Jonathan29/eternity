@@ -1,5 +1,7 @@
 # Verificación de la entrega
 
+La verificación de seguridad del 2026-11-03 está en [.kiro/specs/security-hardening/site-report.md](.kiro/specs/security-hardening/site-report.md). Incluye 19 pruebas Node, 12 combinaciones de página/tema, pruebas Chromium de CSP/marcos y del contrato de baja con fixtures, escaneo de historial y actionlint. El recorrido real de Supabase descrito abajo corresponde exclusivamente al 25 de octubre; no se volvió a ejecutar en el track C.
+
 Ejecución: 25 de octubre de 2026, zona America/Caracas. Solo entorno local para autenticación y eliminación.
 
 - Cinco pruebas unitarias: contrato de desafío/baja y cierre de sesión; UUID estable tras respuesta incierta; token fijado frente a cambio de cuenta; detección de baja pendiente; reautenticación tras cinco minutos. Todas pasaron.
